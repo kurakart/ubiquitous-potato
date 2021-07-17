@@ -2,8 +2,8 @@
 
 'use strict'
 
-const subreddit = 'factorio'
-const limit = 50
+const subreddit = 'productivity'
+const limit = 100
 
 const snoowrap = require('snoowrap')
 const fs = require('fs')
@@ -27,7 +27,7 @@ output.push('---')
 
 r.getHot(subreddit, { limit: limit }).then(dat => {
   dat.forEach(submission => {
-      const permalink = 'https://reddit.com' + submission.permalink
+      const permalink = 'https://old.reddit.com' + submission.permalink
       const author = submission.author.name
 
       output.push('## ' + submission.title)
@@ -35,7 +35,8 @@ r.getHot(subreddit, { limit: limit }).then(dat => {
       output.push('')
 
       if (submission.is_self) {
-        output.push(submission.selftext)
+        if (submission.selftext === '') output.push('No Content.')
+        else output.push(submission.selftext)
       } else {
         output.push('[LINK](' + submission.url + ')')
       }
