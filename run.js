@@ -3,7 +3,11 @@
 'use strict'
 
 const subreddit = 'productivity'
-const limit = 100
+const limit = 10
+const include_subreddit_tag = true
+
+const comment_depth = 1 // don't go crazy, 0, 1 or 2 are usually more than enough
+const comment_limit = 100
 
 const snoowrap = require('snoowrap')
 const fs = require('fs')
@@ -42,7 +46,40 @@ r.getHot(subreddit, { limit: limit }).then(dat => {
       }
 
       output.push('---')
+
+      submission.expandReplies({limit: comment_limit, depth: comment_depth}).then(saveComments)
   })
 
-    fs.writeFile(note_name + '.md', output.join('\r\n'), () => { })
+  output.push('- tags: #redditexport' + (include_subreddit_tag ? (', #' + subreddit) : ''))
+
+  fs.writeFile(note_name + '.md', output.join('\r\n'), () => {  })
 })
+
+function saveComments(submission) {
+  const comments_file = submission.id + '_comments.md'
+  const comments = getComments(submission.comments, 0)
+
+  fs.writeFile(submission.id + '_comments.json', JSON.stringify(getComments(submission.comments, 0)), () => { })
+}
+
+function getComments(comments, depth) {
+  let result = []
+  comments.forEach(c => {
+    let comment = {
+      depth: depth,
+      id: c.id,
+      body: c.body,
+      author: c.author.name,
+      permalink: 'https://reddit.com' + c.permalink
+    }
+
+    // if has replies and not root_only, get recursively
+    if (depth < comment_depth && c.replies.length > 0) {
+      comment.replies = getComments(c.replies, depth + 1)
+    }
+
+    result.push(comment)
+  })
+
+  return result;
+}
